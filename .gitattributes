@@ -1,3 +1,4 @@
 H28x28to128x128.npy
 MNIST.npy
+H28x28x512x512.npy
 *.npy filter=lfs diff=lfs merge=lfs -text
