@@ -21,6 +21,10 @@ class ndMatrix:
         self.shape = np.array(A.shape)
         self.multiplier = [np.prod(np.concatenate([self.shape[i+1:],np.array([1])])) for i in range(len(self.shape))]
         self.multiplier = np.array(self.multiplier,dtype = np.int64)
+        self.vecM = lambda A: np.reshape(A,[np.prod(self.SHAPE['input shape']),1])
+        self.vecN = lambda B: np.reshape(B,[np.prod(self.SHAPE['output shape']),1])
+        self.devecM = lambda a: np.reshape(a,self.SHAPE['input shape'])
+        self.devecN = lambda b: np.reshape(b,self.SHAPE['output shape'])
 
     def len(self):
         return len(self.data)
@@ -154,3 +158,36 @@ class Hough:
         ndA = ndMatrix(input)
         ndB = self.H_phi(ndA)
         return ndB.print()
+    
+    def getH(self,filename):
+        n = np.prod(self.SHAPE['input shape'])
+        m = np.prod(self.SHAPE['output shape'])
+        H = np.zeros([m,n])
+        I = np.identity(n)
+
+        for i in range(n):
+
+            a = I[:,i]
+            A = self.devecM(a)
+            B = self.apply(A)
+            b = self.vecN(B)
+            H[:,i:i+1] = b
+
+            print('%d/%d'%(i,n))
+            self.H = H
+            np.save(filename,H)
+        self.H_inv = np.linalg.pinv(H)
+
+    def multiplyH(self,A = None,B = None):
+        if B is None:
+            a = self.vecM(A)
+            b = np.dot(self.H,a)
+            return self.devecN(b)
+        if A is None:
+            b = self.vecN(B)
+            a = np.dot(self.H_inv,b)
+            return self.devecM(a)
+
+    def loadH(self,filename):
+        self.H = np.load(filename)
+        self.H_inv = np.linalg.pinv(H)
