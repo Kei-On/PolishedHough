@@ -143,10 +143,10 @@ class Hough:
         ndInd = ndMatrix(image)
         self.indicator = ip(ndInd,self.SHAPE)
         
-        self.vecM = lambda A: np.reshape(A,[np.prod(self.Shape['input shape']),1])
-        self.vecN = lambda B: np.reshape(B,[np.prod(self.Shape['output shape']),1])
-        self.devecM = lambda a: np.reshape(a,self.Shape['input shape'])
-        self.devecN = lambda b: np.reshape(b,self.Shape['output shape'])
+        self.vecM = lambda A: np.reshape(A,[np.prod(self.SHAPE['input shape']),1])
+        self.vecN = lambda B: np.reshape(B,[np.prod(self.SHAPE['output shape']),1])
+        self.devecM = lambda a: np.reshape(a,self.SHAPE['input shape'])
+        self.devecN = lambda b: np.reshape(b,self.SHAPE['output shape'])
 
     def h_phi(self,alpha):
         def beta(v_arr): 
