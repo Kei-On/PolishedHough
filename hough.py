@@ -191,3 +191,100 @@ class Hough:
     def loadH(self,filename):
         self.H = np.load(filename)
         self.H_inv = np.linalg.pinv(H)
+        
+LINE = {
+    'input left borders': np.array([0,0]),
+    'input right borders': np.array([1,1]),
+    'input shape': np.array([28,28]),
+    
+    'output left borders': np.array([0, -np.sqrt(2)]),
+    'output right borders': np.array([2*np.pi, np.sqrt(2)]),
+    'output shape': np.array([128,128]),
+
+    'sig inv': lambda x: -np.log(1/x-1),
+    'D sig inv': lambda x: 1/(1/x-1)*(1/(x*x)),
+}
+
+n = 128
+LINE['integral nodes'] = np.linspace(0,1,n+2)[1:n+1].reshape(n,1)
+LINE['integral weights'] = np.broadcast_to(LINE['integral nodes'][0],[n,1])
+
+def phi_line(v_arr,t_arr):
+    v_arr,t_arr = np.array(v_arr),np.array(t_arr)
+    v_list,t_list = a2l(v_arr,2),a2l(t_arr,1)
+    m,n = len(v_list),len(t_list)
+
+    v = np.broadcast_to(v_list,[n,m,2])
+    v = np.transpose(v,[1,0,2])
+    t = np.broadcast_to(t_list,[m,n,1])
+    t = np.transpose(t,[0,1,2])
+
+    ans = np.zeros(np.array([m,n,2]))
+
+    ans[:,:,0] = v[:,:,1] * np.cos(v[:,:,0]) - LINE['sig inv'](t[:,:,0]) * np.sin(v[:,:,0])
+    ans[:,:,1] = v[:,:,1] * np.sin(v[:,:,0]) + LINE['sig inv'](t[:,:,0]) * np.cos(v[:,:,0])
+
+    sv,st = v_arr.shape,t_arr.shape
+    return np.reshape(ans,conc([sv[:len(sv)-1],st[:len(st)-1],[2]]))
+
+def h_star_phi_line(alpha,v_arr):
+    v_arr = np.array(v_arr)
+    def inted_f(t_arr):
+        sv = v_arr.shape
+        t = np.broadcast_to(t_arr,conc([sv[:len(sv)-1],t_arr.shape]))
+        return alpha(phi_line(v_arr,t_arr)) * np.abs(LINE['D sig inv'](t))
+    return integral(inted_f,LINE['integral nodes'],LINE['integral weights'])
+
+LINE['phi'] = phi_line
+LINE['h* phi'] = h_star_phi_line
+
+CIRCLE = {
+    'input left borders': np.array([0,0]),
+    'input right borders': np.array([1,1]),
+    'input shape': np.array([28,28]),
+    
+    'output left borders': np.array([0,0,0]),
+    'output right borders': np.array([1,1,1]),
+    'output shape': np.array([32,32,32]),
+
+    'integral intervals': 128,
+
+}
+
+n = 512
+CIRCLE['integral nodes'] = np.linspace(0,1,n+2)[1:n+1].reshape(n,1)
+CIRCLE['integral weights'] = np.broadcast_to(CIRCLE['integral nodes'][0],[n,1])
+
+def phi_circle(v_arr,t_arr):
+    v_arr,t_arr = np.array(v_arr),np.array(t_arr)
+    v_list,t_list = a2l(v_arr,3),a2l(t_arr,1)
+    m,n = len(v_list),len(t_list)
+
+    v = np.broadcast_to(v_list,[n,m,3])
+    v = np.transpose(v,[1,0,2])
+    t = np.broadcast_to(t_list,[m,n,1])
+    t = np.transpose(t,[0,1,2])
+
+    ans = np.zeros(np.array([m,n,2]))
+
+    ans[:,:,0] = v[:,:,0] + v[:,:,2] * np.cos(2*np.pi*t[:,:,0])
+    ans[:,:,1] = v[:,:,1] + v[:,:,2] * np.sin(2*np.pi*t[:,:,0])
+
+    sv,st = v_arr.shape,t_arr.shape
+    return np.reshape(ans,conc([sv[:len(sv)-1],st[:len(st)-1],[2]]))
+
+def h_star_phi_circle(alpha,v_arr):
+    v_arr = np.array(v_arr)
+    v_list = a2l(v_arr,3)
+    v2_list = v_list[:,2:3]
+    v2_arr = l2a(v2_list,v_arr)
+
+    def inted_f(t_arr):
+        sv,st = v_arr.shape,t_arr.shape
+        v2 = np.broadcast_to(v2_arr,conc([st[:len(st)-1],v2_arr.shape]))
+        v2 = np.transpose(v2,[1,0,2])
+        return alpha(phi_circle(v_arr,t_arr)) * np.abs(2*np.pi*v2)
+    return integral(inted_f,CIRCLE['integral nodes'],CIRCLE['integral weights'])
+
+CIRCLE['phi'] = phi_circle
+CIRCLE['h* phi'] = h_star_phi_circle
