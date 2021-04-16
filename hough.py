@@ -21,8 +21,10 @@ class ndMatrix:
         self.shape = np.array(A.shape)
         self.multiplier = [np.prod(np.concatenate([self.shape[i+1:],np.array([1])])) for i in range(len(self.shape))]
         self.multiplier = np.array(self.multiplier,dtype = np.int64)
+
         self.vecM = lambda A: np.reshape(A,[np.prod(self.SHAPE['input shape']),1])
         self.vecN = lambda B: np.reshape(B,[np.prod(self.SHAPE['output shape']),1])
+
         self.devecM = lambda a: np.reshape(a,self.SHAPE['input shape'])
         self.devecN = lambda b: np.reshape(b,self.SHAPE['output shape'])
 
@@ -207,7 +209,6 @@ LINE = {
     'input left borders': np.array([0,0]),
     'input right borders': np.array([1,1]),
     'input shape': np.array([28,28]),
-    
     'output left borders': np.array([0, -np.sqrt(2)]),
     'output right borders': np.array([2*np.pi, np.sqrt(2)]),
     'output shape': np.array([128,128]),
@@ -253,16 +254,12 @@ CIRCLE = {
     'input left borders': np.array([0,0]),
     'input right borders': np.array([1,1]),
     'input shape': np.array([28,28]),
-    
     'output left borders': np.array([0,0,0]),
     'output right borders': np.array([1,1,1]),
     'output shape': np.array([32,32,32]),
-
-    'integral intervals': 128,
-
 }
 
-n = 512
+n = 128
 CIRCLE['integral nodes'] = np.linspace(0,1,n+2)[1:n+1].reshape(n,1)
 CIRCLE['integral weights'] = np.broadcast_to(CIRCLE['integral nodes'][0],[n,1])
 
