@@ -203,7 +203,7 @@ class Hough:
 
     def loadH(self,filename):
         self.H = np.load(filename)
-        self.H_inv = np.linalg.pinv(H)
+        self.H_inv = np.linalg.pinv(self.H)
         
 LINE = {
     'input left borders': np.array([0,0]),
