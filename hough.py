@@ -296,3 +296,82 @@ def h_star_phi_circle(alpha,v_arr):
 
 CIRCLE['phi'] = phi_circle
 CIRCLE['h* phi'] = h_star_phi_circle
+
+CONV = {
+    'input left borders': np.array([0,0]),
+    'input right borders': np.array([1,1]),
+    'input shape': np.array([28,28]),
+    'output left borders': np.array([0,0,0,0]),
+    'output right borders': np.array([1,1,1,1]),
+    'output shape': np.array([28,28,28,28]),
+
+    'sig inv': lambda x: -np.log(1/x-1),
+    'D sig inv': lambda x: 1/(1/x-1)*(1/(x*x)),
+}
+
+n = 128
+CONV['integral nodes'] = np.linspace(0,1,n+2)[1:n+1].reshape(n,1)
+CONV['integral weights'] = np.broadcast_to(CONV['integral nodes'][0],[n,1])
+
+def get_phi(f,SHAPE):
+    outdim,indim = len(SHAPE['output shape']),len(SHAPE['input shape'])
+    tdim = len(SHAPE['integral nodes'][0])
+    def phi(v_arr,t_arr):
+        v_arr,t_arr = np.array(v_arr),np.array(t_arr)
+        v_list,t_list = a2l(v_arr,outdim),a2l(t_arr,tdim)
+        m,n = len(v_list),len(t_list)
+
+        v = np.broadcast_to(v_list,[n,m,outdim])
+        v = np.transpose(v,[1,0,2])
+        t = np.broadcast_to(t_list,[m,n,tdim])
+        t = np.transpose(t,[0,1,2])
+
+        ans = f(v,t,m,n)
+
+        sv,st = v_arr.shape,t_arr.shape
+        return np.reshape(ans,conc([sv[:len(sv)-1],st[:len(st)-1],[indim]]))
+    return phi
+
+def f_conv(v,t,m,n):
+    ans = np.zeros(np.array([m,n,2]))
+    ans[:,:,0] = (v[:,:,2] - v[:,:,0]) * t[:,:,0] + v[:,:,0]
+    ans[:,:,1] = (v[:,:,3] - v[:,:,1]) * t[:,:,0] + v[:,:,1]
+    return ans
+
+def phi_conv(v_arr,t_arr):
+    v_arr,t_arr = np.array(v_arr),np.array(t_arr)
+    v_list,t_list = a2l(v_arr,4),a2l(t_arr,1)
+    m,n = len(v_list),len(t_list)
+
+    v = np.broadcast_to(v_list,[n,m,4])
+    v = np.transpose(v,[1,0,2])
+    t = np.broadcast_to(t_list,[m,n,1])
+    t = np.transpose(t,[0,1,2])
+
+    ans = np.zeros(np.array([m,n,2]))
+
+    ans[:,:,0] = (v[:,:,2] - v[:,:,0]) * t[:,:,0] + v[:,:,0]
+    ans[:,:,1] = (v[:,:,3] - v[:,:,1]) * t[:,:,0] + v[:,:,1]
+
+    sv,st = v_arr.shape,t_arr.shape
+    return np.reshape(ans,conc([sv[:len(sv)-1],st[:len(st)-1],[2]]))
+
+def h_star_phi_conv(alpha,v_arr):
+    v_arr = np.array(v_arr)
+    v_list = a2l(v_arr,4)
+    def inted_f(t_arr):
+        sv,st = v_arr.shape,t_arr.shape
+        v = []
+        for i in (0,1,2,3):
+            vi_list = v_list[:,i:i+1]
+            vi_arr = l2a(vi_list,v_arr)
+            v.append(np.broadcast_to(vi_arr,conc([st[:len(st)-1],vi_arr.shape])))
+            v[i] = np.transpose(v[i],[1,0,2])
+        g = np.sqrt(np.square(v[2]-v[0])+np.square(v[3]-v[1]))
+        g[np.where(g==0)] = 1
+        return alpha(CONV['phi'](v_arr,t_arr)) * g
+    return integral(inted_f,CONV['integral nodes'],CONV['integral weights'])
+
+CONV['phi'] = phi_conv
+CONV['phi'] = get_phi(f_conv,CONV)
+CONV['h* phi'] = h_star_phi_conv
