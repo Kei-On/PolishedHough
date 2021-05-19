@@ -164,8 +164,50 @@ class Hough:
                 self.SHAPE['h* phi'](self.indicator,v_arr))
         return beta
 
+    '''def D(self,beta):
+        n = len(self.SHAPE['output shape'])
+        d = 1e-1
+        def Dbeta(v_arr):
+            v_arr = np.array(v_arr)
+            v_list = a2l(v_arr,n)
+            zero = np.zeros(v_list.shape)
+            ans = zero
+            for i in range(n):
+                dx = zero
+                dx[:,i] = d
+                ans[:,i:i+1] = (beta(v_list+dx)-beta(v_list))/d
+            ans = l2a(ans,v_arr)
+            return ans
+        return Dbeta
+
+    def g(self,beta):
+        n = len(self.SHAPE['output shape'])
+        Dbeta = self.D(beta)
+        def gbeta(v_arr):
+            v_arr = np.array(v_arr)
+            v_list = a2l(v_arr,n)
+            Dv_list = Dbeta(v_list)
+            Dv2_list = Dv_list * Dv_list
+            sumv2_list = np.sum(Dv2_list,axis = 1, keepdims = True)
+            sumv2_list = (Dv2_list[:,1:2])
+            sumv2_arr = l2a(sumv2_list,v_arr)
+            return sumv2_arr
+        return gbeta'''
+        
+
     def H_phi(self,ndA):
         return ep(self.h_phi(ip(ndA,self.SHAPE)),self.SHAPE)
+
+    '''def gH_phi(self,ndA):
+        beta = self.h_phi(ip(ndA,self.SHAPE))
+        gbeta = self.g(beta)
+        return ep(gbeta,self.SHAPE)
+    
+    def ggH_phi(self,ndA):
+        beta = self.h_phi(ip(ndA,self.SHAPE))
+        gbeta = self.g(beta)
+        ggbeta = self.g(gbeta)
+        return ep(ggbeta,self.SHAPE)'''
     
     def apply(self,input):
         ndA = ndMatrix(input)
@@ -210,8 +252,8 @@ LINE = {
     'input right borders': np.array([1,1]),
     'input shape': np.array([28,28]),
     'output left borders': np.array([0, -np.sqrt(2)]),
-    'output right borders': np.array([2*np.pi, np.sqrt(2)]),
-    'output shape': np.array([128,128]),
+    'output right borders': np.array([np.pi, np.sqrt(2)]),
+    'output shape': np.array([32,32]),
 
     'sig inv': lambda x: -np.log(1/x-1),
     'D sig inv': lambda x: 1/(1/x-1)*(1/(x*x)),
